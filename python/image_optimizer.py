@@ -27,14 +27,30 @@ def compress_resize_webp(input_path, output_path, max_size_kb, width=None, heigh
         img = img.resize((width, height), Image.Resampling.LANCZOS)
 
     # Add watermark if provided
+    # Add watermark if provided
     if watermark and os.path.exists(watermark):
         try:
             logo = Image.open(watermark).convert("RGBA")
-            logo_ratio = 0.2
-            logo = logo.resize((int(img.width * logo_ratio), int(img.height * logo_ratio)))
-            img.alpha_composite(logo, (10, 10))
+
+            # Resize watermark to 15% of image width
+            logo_width = int(img.width * 0.15)
+            logo_ratio = logo_width / logo.width
+            logo_height = int(logo.height * logo_ratio)
+            logo = logo.resize((logo_width, logo_height), Image.Resampling.LANCZOS)
+
+            # Apply opacity 60%
+            alpha = logo.split()[3]
+            alpha = alpha.point(lambda p: int(p * 0.6))
+            logo.putalpha(alpha)
+
+            # Position watermark at bottom-right with 10px padding
+            position = (img.width - logo.width - 10, img.height - logo.height - 10)
+
+            # Composite watermark onto image
+            img.alpha_composite(logo, position)
         except Exception as e:
             print(f"Error applying watermark: {e}")
+
 
     # Save initially as WebP
     quality = 85
