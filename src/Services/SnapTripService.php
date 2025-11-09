@@ -33,8 +33,10 @@ class SnapTripService
         $outputFileName = pathinfo($filePath, PATHINFO_FILENAME) . '.webp';
         $absoluteOutput = $absoluteOutputFolder . '/' . $outputFileName;
 
-        // Absolute path for watermark
-        $absoluteWatermark = $watermarkLogo ? storage_path('app/public/' . ltrim($watermarkLogo, '/')) : 'null';
+        // Absolute path for watermark (forward slashes)
+        $absoluteWatermark = $watermarkLogo
+            ? str_replace('\\','/', storage_path('app/public/' . ltrim($watermarkLogo, '/')))
+            : 'null';
 
         // Run Python script
         $result = PythonRunner::runScript(
