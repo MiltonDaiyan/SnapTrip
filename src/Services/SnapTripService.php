@@ -14,14 +14,13 @@ class SnapTripService
         ?string $outputFolder = null,
         ?string $watermarkLogo = null
     ) {
-        if (!file_exists(public_path($filePath))) {
-            throw new \Exception("File not found: $filePath");
+        $absoluteInput = storage_path('app/public/' . ltrim($filePath, '/'));
+        if (!file_exists($absoluteInput)) {
+            throw new \Exception("File not found at absolute path: $absoluteInput");
         }
 
-        $absoluteInput = public_path($filePath);
-        $outputFolder = $outputFolder ?? config('snaptrip.output_folder', 'uploads/optimized');
-        $absoluteOutputFolder = public_path($outputFolder);
-        $pythonPath = config('snaptrip.python_path', 'python3');
+        $outputFolder = $outputFolder ?? config('snaptrip.output_folder', 'optimized');
+        $absoluteOutputFolder = storage_path('app/public/' . ltrim($outputFolder, '/'));
 
         if (!file_exists($absoluteOutputFolder)) {
             mkdir($absoluteOutputFolder, 0755, true);
@@ -33,14 +32,14 @@ class SnapTripService
         $result = PythonRunner::runScript(
             scriptPath: __DIR__ . '/../../python/image_optimizer.py',
             args: [
-                'input' => $absoluteInput,
-                'output' => $absoluteOutput,
+                'input' => str_replace('\\','/', $absoluteInput),
+                'output' => str_replace('\\','/', $absoluteOutput),
                 'max_size_kb' => $targetKb,
                 'width' => $width,
                 'height' => $height,
-                'watermark' => $watermarkLogo ? public_path($watermarkLogo) : 'null'
+                'watermark' => $watermarkLogo ? storage_path('app/public/' . ltrim($watermarkLogo, '/')) : 'null'
             ],
-            pythonBinary: $pythonPath
+            pythonBinary: config('snaptrip.python_path', 'python3')
         );
 
         return [
