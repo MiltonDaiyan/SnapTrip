@@ -3,6 +3,8 @@ import os
 from PIL import Image
 
 def compress_resize_webp(input_path, output_path, max_size_kb, width=None, height=None, watermark=None):
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
+
     img = Image.open(input_path).convert("RGBA")
 
     # Resize if dimensions given
@@ -14,17 +16,15 @@ def compress_resize_webp(input_path, output_path, max_size_kb, width=None, heigh
         logo = Image.open(watermark).convert("RGBA")
         logo_ratio = 0.2
         logo = logo.resize((int(img.width * logo_ratio), int(img.height * logo_ratio)))
-        img.paste(logo, (10, 10), logo)
+        img.alpha_composite(logo, (10, 10))
 
-    # Save initially as WebP
-    img.save(output_path, "WEBP", quality=85, optimize=True)
+    # Start with high quality and reduce if needed
+    quality = 85
+    img.save(output_path, "WEBP", quality=quality, optimize=True)
 
-    # Iteratively reduce size if above target KB
-    while os.path.getsize(output_path) / 1024 > max_size_kb and max_size_kb > 50:
-        img.save(output_path, "WEBP", quality=70, optimize=True)
-        if os.path.getsize(output_path) / 1024 <= max_size_kb:
-            break
-        max_size_kb -= 50
+    while os.path.getsize(output_path) / 1024 > max_size_kb and quality > 10:
+        quality -= 5
+        img.save(output_path, "WEBP", quality=quality, optimize=True)
 
     print(f'{{"status": "success", "output": "{output_path}"}}')
 
